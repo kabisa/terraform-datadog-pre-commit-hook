@@ -104,7 +104,7 @@ def generate_docs_for_module_dir(module_dir, precommit_docs_enabled=True):
             fl.write(f"## Module Variables\n\n")
             generate_table_for_tf_obj(module_variables, default_value="", output_buff=fl)
             fl.write("\n\n")
-    os.system(f"gh-md-toc --insert {module_readme}")
+    os.system(f"gh-md-toc --insert {module_readme}  --no-backup")
 
 
 if __name__ == '__main__':

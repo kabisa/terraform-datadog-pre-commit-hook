@@ -20,6 +20,7 @@ Steps:
    - Install [pre-commit](http://pre-commit.com/). E.g. `brew install pre-commit`.
    - Run `pre-commit install` in the repo.
    - That’s it! Now every time you commit a code change (`.tf` file), the hooks in the `hooks:` config `.pre-commit-config.yaml` will execute.
+
 """
 
 INDEX_CHECK_PATTERN = "| [{check_name}](README.md#{check_name}) | [{file_name}]({file_name})  | {default_enabled}"

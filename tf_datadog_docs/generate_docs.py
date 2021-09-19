@@ -103,7 +103,7 @@ def generate_docs_for_module_dir(module_dir):
         module_name = module_name.replace("Terraform ", "Terraform module for ")
         fl.write(
             textwrap.dedent(
-                f"""
+                f"""![Kabisa](https://avatars.githubusercontent.com/u/1531725)
             [//]: # (This file is generated. Do not edit)
 
             # {module_name}

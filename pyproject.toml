@@ -9,7 +9,7 @@ license = "MIT"
 
 # Requirements
 [tool.poetry.dependencies]
-python ">=3.5"
+python = ">=3.5"
 inflection = "^0.5.1"
 pyhcl = "^0.4.4"
 

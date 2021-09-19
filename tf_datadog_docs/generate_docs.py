@@ -108,7 +108,7 @@ def generate_docs_for_module_dir(module_dir):
 
             # {module_name}
 
-            TOC:
+            Monitors:
             * [{module_name}](#{canonicalize_link(module_name)})
             """
             )

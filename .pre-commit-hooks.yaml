@@ -1,5 +1,5 @@
 -   id: terraform-datadog-docs
     name: Generated Terraform DataDog Docs
     description: Makes a doc table per -variables.tf file
-    entry: generate_docs.py
+    entry: generate_docs
     language: python

@@ -3,3 +3,4 @@
     description: Makes a doc table per -variables.tf file
     entry: generate_docs
     language: python
+    language_version: python3

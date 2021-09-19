@@ -85,7 +85,7 @@ def read_intro(fl, module_dir, toc):
             for line in intro_fl.readlines():
                 if line.startswith("#"):
                     toc_level, toc_line = get_toc_line(line)
-                    toc.append(toc_level * " " + toc_line)
+                    toc.append(toc_level * " " + f"[{toc_line}](#{canonicalize_link(toc_line)})")
                 fl.write(line)
 
 
@@ -129,7 +129,7 @@ def generate_docs_for_module_dir(module_dir):
             check_name = " ".join(words[:-1])
             if check_name:
                 buff.write(f"## {check_name}\n\n")
-                toc.append(f"  *[{check_name}](##{canonicalize_link(check_name)})")
+                toc.append(f"  * [{check_name}](#{canonicalize_link(check_name)})")
                 generate_table_for_tf_obj(obj, default_value="", output_buff=buff)
                 buff.write("\n\n")
             else:
@@ -137,7 +137,7 @@ def generate_docs_for_module_dir(module_dir):
 
         if module_variables:
             buff.write(f"## Module Variables\n\n")
-            toc.append(f"  *[Module Variables](##module-variables)")
+            toc.append(f"  * [Module Variables](#module-variables)")
             generate_table_for_tf_obj(
                 module_variables, default_value="", output_buff=buff
             )
@@ -148,7 +148,6 @@ def generate_docs_for_module_dir(module_dir):
         fl.write(PRE_COMMIT_DOCS)
         buff.seek(0)
         fl.write(buff.read())
-        print('TOC: ', len(toc))
 
 
 if __name__ == "__main__":

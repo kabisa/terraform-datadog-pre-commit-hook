@@ -1,17 +1,17 @@
-[project]
-name = "Datadog Terraform Docs Generator"
+[tool.poetry]
+name = "tf_datadog_docs"
 version = "0.1.0"
 description = "This repo is used as a pre-commit hook to generate README.md file for Datadog Terraform projects"
 authors = [
-    "sjuul@kabisa.nl"
+    "Sjuul Janssen <sjuul@kabisa.nl>"
 ]
 license = "MIT"
-python = "^3.6"
 
 # Requirements
-[dependencies]
+[tool.poetry.dependencies]
+python ">=3.5"
 inflection = "^0.5.1"
 pyhcl = "^0.4.4"
 
-[project.entry-points.tf_datadog_docs]
+[tool.poetry.scripts]
 tf_datadog_docs = "tf_datadog_docs:main"

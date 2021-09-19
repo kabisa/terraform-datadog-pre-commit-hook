@@ -5,7 +5,7 @@ import sys
 import textwrap
 
 import inflection
-from hcl2mdt import load_hcl_file, HclLoadError, generate_table_for_tf_obj
+from .hcl2mdt import load_hcl_file, HclLoadError, generate_table_for_tf_obj
 
 INDEX_HEADER = """
 | Check | Terraform File | Default Enabled |

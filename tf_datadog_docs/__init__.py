@@ -1,1 +1,1 @@
-from generate_docs import main
+from .generate_docs import main

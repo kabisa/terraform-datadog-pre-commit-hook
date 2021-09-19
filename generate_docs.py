@@ -3,23 +3,7 @@ import sys
 import textwrap
 import pip
 
-
-def install(package):
-    if hasattr(pip, 'main'):
-        pip.main(['install', package])
-    else:
-        pip._internal.main(['install', package])
-
-try:
-    import inflection
-except ImportError:
-    install("inflection")
-
-try:
-    import hcl2mdt
-except ImportError:
-    install("hcl2mdt")
-
+import inflection
 from hcl2mdt import load_hcl_file, HclLoadError, generate_table_for_tf_obj
 
 INDEX_HEADER = """

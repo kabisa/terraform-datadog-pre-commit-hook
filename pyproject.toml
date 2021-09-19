@@ -1,0 +1,14 @@
+[project]
+name = "Datadog Terraform Docs Generator"
+version = "0.1.0"
+description = "This repo is used as a pre-commit hook to generate README.md file for Datadog Terraform projects"
+authors = [
+    "sjuul@kabisa.nl"
+]
+license = "MIT"
+python = "^3.6"
+
+# Requirements
+[dependencies]
+inflection
+hcl2mdt

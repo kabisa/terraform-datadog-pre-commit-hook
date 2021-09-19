@@ -10,5 +10,5 @@ python = "^3.6"
 
 # Requirements
 [dependencies]
-inflection
-hcl2mdt
+inflection = "^0.5.1"
+pyhcl = "^0.4.4"

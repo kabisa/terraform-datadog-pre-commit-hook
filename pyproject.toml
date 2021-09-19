@@ -12,3 +12,6 @@ python = "^3.6"
 [dependencies]
 inflection = "^0.5.1"
 pyhcl = "^0.4.4"
+
+[project.entry-points."pygments.lexers"]
+tf_datadog_docs = "generate_docs:main"

@@ -14,4 +14,4 @@ inflection = "^0.5.1"
 pyhcl = "^0.4.4"
 
 [project.entry-points.tf_datadog_docs]
-tf_datadog_docs = "generate_docs:main"
+tf_datadog_docs = "generate_docs"

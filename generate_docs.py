@@ -1,7 +1,8 @@
+#!/usr/bin/env python
+
 import os
 import sys
 import textwrap
-import pip
 
 import inflection
 from hcl2mdt import load_hcl_file, HclLoadError, generate_table_for_tf_obj

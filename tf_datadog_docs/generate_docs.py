@@ -86,7 +86,10 @@ def read_intro(fl, module_dir, toc):
             for line in intro_fl.readlines():
                 if line.startswith("#"):
                     toc_level, toc_line = get_toc_line(line)
-                    toc.append(toc_level * " " + f"[{toc_line}](#{canonicalize_link(toc_line)})")
+                    toc.append(
+                        toc_level * " "
+                        + f"[{toc_line}](#{canonicalize_link(toc_line)})"
+                    )
                 fl.write(line)
 
 
@@ -103,7 +106,8 @@ def generate_docs_for_module_dir(module_dir):
         module_name = module_name.replace("Terraform ", "Terraform module for ")
         fl.write(
             textwrap.dedent(
-                f"""![Kabisa](https://avatars.githubusercontent.com/u/1531725)
+                f"""
+            ![Kabisa](https://avatars.githubusercontent.com/u/1531725)
             [//]: # (This file is generated. Do not edit)
 
             # {module_name}

@@ -104,6 +104,7 @@ def generate_docs_for_module_dir(module_dir):
             # {module_name}
 
             TOC:
+            * [{module_name}](#{inflection.dasherize(module_name)})
             """
             )
         )
@@ -143,6 +144,7 @@ def generate_docs_for_module_dir(module_dir):
         fl.write(PRE_COMMIT_DOCS)
         buff.seek(0)
         fl.write(buff.read())
+        print('TOC: ', len(toc))
 
 
 if __name__ == "__main__":

@@ -138,6 +138,8 @@ def generate_docs_for_module_dir(module_dir):
             )
             buff.write("\n\n")
 
+        fl.write("\n".join(toc) + "\n")
+
         fl.write(PRE_COMMIT_DOCS)
         buff.seek(0)
         fl.write(buff.read())

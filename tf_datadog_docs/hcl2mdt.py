@@ -19,7 +19,9 @@ def load_hcl_file(hcl_file_path: str):
                 f"{err}\n{hcl_file_path}\nNote: pyhcl 0.4.4 and below do not seem to support validation sections in variables."
             )
         except Exception as err:
-            raise HclLoadError(f"{err}\nError Loading File: {hcl_file_path}, May need to update pyhcl.")
+            raise HclLoadError(
+                f"{err}\nError Loading File: {hcl_file_path}, May need to update pyhcl."
+            )
         if str(obj) == "{}":
             raise HclLoadError(f"Empty Variables File: {hcl_file_path}")
         return obj
@@ -49,15 +51,18 @@ def generate_table_for_tf_obj(obj, default_value: str, output_buff):
             col4 = min(description, 100)
 
     # Generate Table
-    print("| {} | {} | {} | {} |".format(
-        "variable".ljust(col1),
-        "default".ljust(col2),
-        "required".ljust(col3),
-        "description".ljust(col4)
-    ), file=output_buff)
+    print(
+        "| {} | {} | {} | {} |".format(
+            "variable".ljust(col1),
+            "default".ljust(col2),
+            "required".ljust(col3),
+            "description".ljust(col4),
+        ),
+        file=output_buff,
+    )
     print(
         "|-{}-|-{}-|-{}-|-{}-|".format("-" * col1, "-" * col2, "-" * col3, "-" * col4),
-        file=output_buff
+        file=output_buff,
     )
     # print "| Variable | Default | Required | Description |"
     # print "|----------|---------|----------|-------------|"
@@ -75,12 +80,15 @@ def generate_table_for_tf_obj(obj, default_value: str, output_buff):
         elif default == key + "%defvalue%":
             default = default_value
 
-        print("| {} | {} | {} | {} |".format(
-            str(key).strip(" ").ljust(col1),
-            str(default).strip(" ").ljust(col2),
-            str(required).strip(" ").ljust(col3),
-            str(description).strip(" ").ljust(col4)
-        ), file=output_buff)
+        print(
+            "| {} | {} | {} | {} |".format(
+                str(key).strip(" ").ljust(col1),
+                str(default).strip(" ").ljust(col2),
+                str(required).strip(" ").ljust(col3),
+                str(description).strip(" ").ljust(col4),
+            ),
+            file=output_buff,
+        )
 
 
 def main():
@@ -96,9 +104,7 @@ def main():
         print(f"File {file_path} did not exist")
     try:
         generate_table_for_file(
-            hcl_file_path=file_path,
-            default_value=default_value,
-            output_buff=sys.stdout
+            hcl_file_path=file_path, default_value=default_value, output_buff=sys.stdout
         )
     except HclLoadError as hclerr:
         print(f"{hclerr}", file=sys.stderr)

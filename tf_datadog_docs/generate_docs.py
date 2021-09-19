@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-
+import io
 import os
 import sys
 import textwrap
@@ -12,7 +12,7 @@ INDEX_HEADER = """
 | --- | --- | --- |
 """
 
-PRECOMMIT_DOCS = """
+PRE_COMMIT_DOCS = """
 # Getting started
 [pre-commit](http://pre-commit.com/) was used to do Terraform linting and validating.
 
@@ -26,21 +26,26 @@ INDEX_CHECK_PATTERN = "| [{check_name}](README.md#{check_name}) | [{file_name}](
 
 
 def get_dirs_in_path(pth):
-    return [os.path.join(pth, o) for o in os.listdir(pth) if os.path.isdir(os.path.join(pth, o))]
+    return [
+        os.path.join(pth, o)
+        for o in os.listdir(pth)
+        if os.path.isdir(os.path.join(pth, o))
+    ]
 
 
 def get_tf_files_in_path(pth):
-    return [os.path.join(pth, o) for o in os.listdir(pth) if os.path.isfile(os.path.join(pth, o)) and o.endswith(".tf")]
+    return [
+        os.path.join(pth, o)
+        for o in os.listdir(pth)
+        if os.path.isfile(os.path.join(pth, o)) and o.endswith(".tf")
+    ]
 
 
 def get_tf_variables_files_in_path(pth):
     return [o for o in get_tf_files_in_path(pth) if o.endswith("variables.tf")]
 
 
-CAPITALIZE_KEYWORDS = {
-    "dd": "Datadog",
-    "cpu": "CPU"
-}
+CAPITALIZE_KEYWORDS = {"dd": "Datadog", "cpu": "CPU"}
 
 
 def capitalize(inp: str):
@@ -54,7 +59,9 @@ def capitalize(inp: str):
 
 
 def get_relative_modules():
-    return [module_dir for module_dir in get_dirs_in_path(os.path.abspath("../modules"))]
+    return [
+        module_dir for module_dir in get_dirs_in_path(os.path.abspath("../modules"))
+    ]
 
 
 def main():
@@ -63,26 +70,46 @@ def main():
     generate_docs_for_module_dir(module_dir=module_dir)
 
 
-def generate_docs_for_module_dir(module_dir, precommit_docs_enabled=True):
+def get_toc_line(line):
+    count = 0
+    while line.startswith("#"):
+        line = line[1:]
+        count += 1
+    return count - 1, line.strip()
+
+
+def read_intro(fl, module_dir, toc):
+    intro_fl_path = os.path.join(module_dir, "intro.md")
+    if os.path.isfile(intro_fl_path):
+        with open(intro_fl_path, "r") as intro_fl:
+            for line in intro_fl.readlines():
+                if line.startswith("#"):
+                    toc_level, toc_line = get_toc_line(line)
+                    toc.append(toc_level * " " + toc_line)
+                fl.write(line)
+
+
+def generate_docs_for_module_dir(module_dir):
     module_readme = os.path.join(module_dir, "README.md")
+    toc = []
     with open(module_readme, "w") as fl:
+        read_intro(fl, module_dir, toc)
         module_name = inflection.titleize(os.path.basename(module_dir))
         module_name = module_name.replace("Terraform ", "Terraform module for ")
-        if precommit_docs_enabled:
-            fl.write(f"{PRECOMMIT_DOCS}\n")
-
-        fl.write(textwrap.dedent(f"""
+        fl.write(
+            textwrap.dedent(
+                f"""
             [//]: # (This file is generated. Do not edit)
 
             # {module_name}
 
             TOC:
-            <!--ts-->
-            <!--te-->
-
-            """))
+            """
+            )
+        )
 
         module_variables = None
+        buff = io.StringIO()
         for terraform_file in get_tf_variables_files_in_path(module_dir):
             try:
                 obj = load_hcl_file(terraform_file)
@@ -91,21 +118,30 @@ def generate_docs_for_module_dir(module_dir, precommit_docs_enabled=True):
                     continue
                 else:
                     raise
-            words = list(map(capitalize, os.path.basename(terraform_file)[:-3].split("-")))
+            words = list(
+                map(capitalize, os.path.basename(terraform_file)[:-3].split("-"))
+            )
             check_name = " ".join(words[:-1])
             if check_name:
-                fl.write(f"## {check_name}\n\n")
-                generate_table_for_tf_obj(obj, default_value="", output_buff=fl)
-                fl.write("\n\n")
+                buff.write(f"## {check_name}\n\n")
+                toc.append(f"  *[{check_name}]({inflection.dasherize(check_name)})")
+                generate_table_for_tf_obj(obj, default_value="", output_buff=buff)
+                buff.write("\n\n")
             else:
                 module_variables = obj
 
         if module_variables:
-            fl.write(f"## Module Variables\n\n")
-            generate_table_for_tf_obj(module_variables, default_value="", output_buff=fl)
-            fl.write("\n\n")
-    os.system(f"gh-md-toc --no-backup {module_readme}")
+            buff.write(f"## Module Variables\n\n")
+            toc.append(f"  *[Module Variables](#module-variables)")
+            generate_table_for_tf_obj(
+                module_variables, default_value="", output_buff=buff
+            )
+            buff.write("\n\n")
+
+        fl.write(PRE_COMMIT_DOCS)
+        buff.seek(0)
+        fl.write(buff.read())
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

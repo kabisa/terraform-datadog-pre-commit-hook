@@ -106,7 +106,7 @@ def generate_docs_for_module_dir(module_dir):
         module_name = module_name.replace("Terraform ", "Terraform module for ")
         fl.write(
             textwrap.dedent(f"""
-            ![Kabisa](https://avatars.githubusercontent.com/u/1531725)
+            ![Datadog](https://imgix.datadoghq.com/img/about/presskit/logo-v/dd_vertical_purple.png)
             
             [//]: # (This file is generated. Do not edit)
 

@@ -5,7 +5,7 @@ import sys
 import textwrap
 
 import inflection
-from .hcl2mdt import load_hcl_file, HclLoadError, generate_table_for_tf_obj, get_module_docs
+from .hcl2mdt import load_hcl_file, HclLoadError, generate_table_for_tf_obj, get_module_docs, extract_module_query
 
 INDEX_HEADER = """
 | Check | Terraform File | Default Enabled |
@@ -137,6 +137,9 @@ def generate_docs_for_module_dir(module_dir):
                 module_docs = get_module_docs(obj)
                 if module_docs:
                     buff.write(module_docs + "\n\n")
+                module_query = get_module_query(terraform_file)
+                if module_query:
+                    buff.write(module_query + "\n\n")
                 toc.append(f"  * [{check_name}](#{canonicalize_link(check_name)})")
                 generate_table_for_tf_obj(obj, default_value="", output_buff=buff)
                 buff.write("\n\n")
@@ -156,6 +159,24 @@ def generate_docs_for_module_dir(module_dir):
         fl.write(PRE_COMMIT_DOCS)
         buff.seek(0)
         fl.write(buff.read())
+
+
+def get_module_query(terraform_file):
+    module_file_path = terraform_file.replace("-variables.tf", ".tf")
+    try:
+        obj = load_hcl_file(module_file_path)
+    except Exception as ex:
+        return print(ex, file=sys.stderr)
+    query = extract_module_query(obj)
+    if query:
+        query = textwrap.dedent(f"""
+            Query:
+            ```terraform
+            {query}
+            ```
+            """
+        ).strip()
+    return query
 
 
 if __name__ == "__main__":

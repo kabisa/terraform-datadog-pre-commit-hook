@@ -1,5 +1,5 @@
 # Original Source: https://github.com/hassenius/hcl2mdtable
-
+import re
 import sys
 from os.path import isfile
 
@@ -10,21 +10,34 @@ class HclLoadError(Exception):
     pass
 
 
+def load_hcl_str(hcl_str: str, hcl_file_path: str):
+    try:
+        obj = hcl.loads(hcl_str)
+    except ValueError as err:
+        err_str = str(err)
+        if "Illegal character" in err_str:
+            if "&&" in hcl_str:
+                hcl_str = re.sub(r'&&[^\n]+\n', '', hcl_str)
+            else:
+                index = int(err_str.split(" ")[5].replace(":", ""))
+                hcl_str = hcl_str[0:index] + hcl_str[index+1:]
+            return load_hcl_str(hcl_str, hcl_file_path)
+        raise HclLoadError(
+            f"{err}\n{hcl_file_path}\nNote: pyhcl 0.4.4 and below do not seem to support validation sections in variables."
+        )
+    except Exception as err:
+        raise HclLoadError(
+            f"{err}\nError Loading File: {hcl_file_path}, May need to update pyhcl."
+        )
+    if str(obj) == "{}":
+        raise HclLoadError(f"Empty Variables File: {hcl_file_path}")
+    return obj
+
+
 def load_hcl_file(hcl_file_path: str):
     with open(hcl_file_path, "r") as fp:
-        try:
-            obj = hcl.load(fp)
-        except ValueError as err:
-            raise HclLoadError(
-                f"{err}\n{hcl_file_path}\nNote: pyhcl 0.4.4 and below do not seem to support validation sections in variables."
-            )
-        except Exception as err:
-            raise HclLoadError(
-                f"{err}\nError Loading File: {hcl_file_path}, May need to update pyhcl."
-            )
-        if str(obj) == "{}":
-            raise HclLoadError(f"Empty Variables File: {hcl_file_path}")
-        return obj
+        contents = fp.read()
+        return load_hcl_str(contents, hcl_file_path)
 
 
 def generate_table_for_file(hcl_file_path: str, default_value: str, output_buff):
@@ -33,12 +46,20 @@ def generate_table_for_file(hcl_file_path: str, default_value: str, output_buff)
 
 
 def get_module_docs(obj) -> str:
+    docs = ""
     for key in obj["variable"].keys():
         if key.endswith("_docs"):
-            docs = obj["variable"][key].get("default", "")
-            if docs:
-                return docs
-    return ""
+            docs = obj["variable"][key].get("default", "") or docs
+    return docs
+
+
+def extract_module_query(obj) -> str:
+    query = ""
+    if "module" not in obj:
+        return query
+    for module in obj["module"].values():
+        query = module.get("query", "") or query
+    return query
 
 
 def generate_table_for_tf_obj(obj, default_value: str, output_buff):

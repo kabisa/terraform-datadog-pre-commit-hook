@@ -32,6 +32,15 @@ def generate_table_for_file(hcl_file_path: str, default_value: str, output_buff)
     return generate_table_for_tf_obj(obj, default_value, output_buff)
 
 
+def get_module_docs(obj) -> str:
+    for key in obj["variable"].keys():
+        if key.endwith("_docs"):
+            docs = obj["variable"][key].get("default", "")
+            if docs:
+                return docs
+    return ""
+
+
 def generate_table_for_tf_obj(obj, default_value: str, output_buff):
     # Default Column Widths
     col1 = 8  # variable

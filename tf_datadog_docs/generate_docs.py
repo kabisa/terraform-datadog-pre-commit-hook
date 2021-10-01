@@ -5,7 +5,7 @@ import sys
 import textwrap
 
 import inflection
-from .hcl2mdt import load_hcl_file, HclLoadError, generate_table_for_tf_obj
+from .hcl2mdt import load_hcl_file, HclLoadError, generate_table_for_tf_obj, get_module_docs
 
 INDEX_HEADER = """
 | Check | Terraform File | Default Enabled |
@@ -134,6 +134,9 @@ def generate_docs_for_module_dir(module_dir):
             check_name = " ".join(words[:-1])
             if check_name:
                 buff.write(f"## {check_name}\n\n")
+                module_docs = get_module_docs(obj)
+                if module_docs:
+                    buff.write(module_docs + "\n\n")
                 toc.append(f"  * [{check_name}](#{canonicalize_link(check_name)})")
                 generate_table_for_tf_obj(obj, default_value="", output_buff=buff)
                 buff.write("\n\n")

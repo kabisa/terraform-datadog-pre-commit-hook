@@ -34,7 +34,7 @@ def generate_table_for_file(hcl_file_path: str, default_value: str, output_buff)
 
 def get_module_docs(obj) -> str:
     for key in obj["variable"].keys():
-        if key.endwith("_docs"):
+        if key.endswith("_docs"):
             docs = obj["variable"][key].get("default", "")
             if docs:
                 return docs

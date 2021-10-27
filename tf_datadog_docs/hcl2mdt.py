@@ -22,6 +22,9 @@ def load_hcl_str(hcl_str: str, hcl_file_path: str):
                 index = int(err_str.split(" ")[5].replace(":", ""))
                 hcl_str = hcl_str[0:index] + hcl_str[index+1:]
             return load_hcl_str(hcl_str, hcl_file_path)
+        if "validation {" in hcl_str:
+            new_str = re.sub(r'validation \{[^}]+}', '', hcl_str)
+            return load_hcl_str(new_str, hcl_file_path)
         raise HclLoadError(
             f"{err}\n{hcl_file_path}\nNote: pyhcl 0.4.4 and below do not seem to support validation sections in variables."
         )

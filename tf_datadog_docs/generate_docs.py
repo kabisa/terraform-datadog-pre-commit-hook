@@ -3,9 +3,13 @@ import io
 import os
 import sys
 import textwrap
+from os.path import expanduser, isfile, basename
 
 import inflection
-from .hcl2mdt import load_hcl_file, HclLoadError, generate_table_for_tf_obj, get_module_docs, extract_module_query
+import yaml
+
+from tf_datadog_docs.hcl2mdt import load_hcl_file, HclLoadError, generate_table_for_tf_obj, get_module_docs, extract_module_query, \
+    get_module_property
 
 INDEX_HEADER = """
 | Check | Terraform File | Default Enabled |
@@ -65,9 +69,10 @@ def get_relative_modules():
     ]
 
 
-def main():
-    path_var = sys.argv[1] if len(sys.argv) > 1 else "."
-    module_dir = os.path.abspath(path_var)
+def main(module_dir=None):
+    if module_dir is None:
+        path_var = sys.argv[1] if len(sys.argv) > 1 else "."
+        module_dir = os.path.abspath(path_var)
     generate_docs_for_module_dir(module_dir=module_dir)
 
 
@@ -97,6 +102,26 @@ def canonicalize_link(inp: str) -> str:
     return inflection.parameterize(inp.lower(), separator="-")
 
 
+def canonicalize_module_name(inp: str) -> str:
+    return inflection.parameterize(inp.lower(), separator="_")
+
+
+def loop_variable_files(module_dir: str):
+    for terraform_file in get_tf_variables_files_in_path(module_dir):
+        try:
+            obj = load_hcl_file(terraform_file)
+        except HclLoadError as err:
+            if "Empty Variables File" in str(err):
+                continue
+            else:
+                raise
+        words = list(
+            map(capitalize, os.path.basename(terraform_file)[:-3].split("-"))
+        )
+        check_name = " ".join(words[:-1])
+        yield check_name, terraform_file, obj
+
+
 def generate_docs_for_module_dir(module_dir):
     module_readme = os.path.join(module_dir, "README.md")
     toc = []
@@ -120,24 +145,13 @@ def generate_docs_for_module_dir(module_dir):
 
         module_variables = None
         buff = io.StringIO()
-        for terraform_file in get_tf_variables_files_in_path(module_dir):
-            try:
-                obj = load_hcl_file(terraform_file)
-            except HclLoadError as err:
-                if "Empty Variables File" in str(err):
-                    continue
-                else:
-                    raise
-            words = list(
-                map(capitalize, os.path.basename(terraform_file)[:-3].split("-"))
-            )
-            check_name = " ".join(words[:-1])
+        for check_name, terraform_file, obj in loop_variable_files(module_dir):
             if check_name:
                 buff.write(f"## {check_name}\n\n")
                 module_docs = get_module_docs(obj)
                 if module_docs:
                     buff.write(module_docs + "\n\n")
-                module_query = get_module_query(terraform_file)
+                module_query = get_module_query_docs(terraform_file=terraform_file, vars_obj=obj, check_name_underscored=canonicalize_module_name(check_name))
                 if module_query:
                     buff.write(module_query + "\n\n")
                 toc.append(f"  * [{check_name}](#{canonicalize_link(check_name)})")
@@ -167,8 +181,20 @@ def get_module_query(terraform_file):
         obj = load_hcl_file(module_file_path)
     except Exception as ex:
         return print(ex, file=sys.stderr)
-    query = extract_module_query(obj)
+    return extract_module_query(obj)
+
+
+def expand_module_query(obj, check_name_underscored, query):
+    query = query.replace(f"${{var.{check_name_underscored}_evaluation_period}}", get_module_property(obj, "evaluation_period"))
+    query = query.replace(f"${{var.{check_name_underscored}_critical}}", str(get_module_property(obj, "critical")))
+    query = query.replace(f"${{local.{check_name_underscored}_filter}}", "tag:xxx")
+    return query
+
+
+def get_module_query_docs(terraform_file, vars_obj, check_name_underscored):
+    query = get_module_query(terraform_file)
     if query:
+        query = expand_module_query(vars_obj, check_name_underscored, query)
         query = textwrap.dedent(f"""
             Query:
             ```terraform
@@ -179,5 +205,39 @@ def get_module_query(terraform_file):
     return query
 
 
+def add_to_local_index(module_dir=None):
+    if module_dir is None:
+        path_var = sys.argv[1] if len(sys.argv) > 1 else "."
+        module_dir = os.path.abspath(path_var)
+
+    index_loc = expanduser("~/.datadog-terraform-monitor-index.yaml")
+    if isfile(index_loc):
+        with open(index_loc, "r") as fl:
+            index = yaml.safe_load(fl)
+    else:
+        index = {}
+
+    module_name = basename(module_dir)
+    if module_name not in index:
+        index[module_name] = {}
+    for check_name, terraform_file, obj in loop_variable_files(module_dir):
+        if check_name:
+            check_name_underscored = canonicalize_module_name(check_name)
+            index[module_name][check_name] = module_info = {
+                "docs": get_module_docs(obj),
+                "name": check_name,
+                "query": get_module_query(terraform_file),
+                "evaluation_period": get_module_property(obj, "evaluation_period"),
+                "default_enabled": get_module_property(obj, "enabled"),
+                "priority": get_module_property(obj, "priority"),
+                "critical": get_module_property(obj, "critical"),
+            }
+            if module_info["query"]:
+                module_info["query"] = expand_module_query(obj, check_name_underscored, module_info["query"])
+
+    with open(index_loc, "w") as fl:
+        yaml.safe_dump(index, fl)
+
+
 if __name__ == "__main__":
-    main()
+    main("/Users/sjuuljanssen/workspace/terraform-datadog-kubernetes")

@@ -49,11 +49,15 @@ def generate_table_for_file(hcl_file_path: str, default_value: str, output_buff)
 
 
 def get_module_docs(obj) -> str:
-    docs = ""
+    return get_module_property(obj, "docs")
+
+
+def get_module_property(obj, property_name) -> str:
+    prop_value = ""
     for key in obj["variable"].keys():
-        if key.endswith("_docs"):
-            docs = obj["variable"][key].get("default", "") or docs
-    return docs
+        if key.endswith(f"_{property_name}"):
+            prop_value = obj["variable"][key].get("default", "") or prop_value
+    return prop_value
 
 
 def extract_module_query(obj) -> str:

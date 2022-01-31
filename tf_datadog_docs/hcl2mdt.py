@@ -17,13 +17,13 @@ def load_hcl_str(hcl_str: str, hcl_file_path: str):
         err_str = str(err)
         if "Illegal character" in err_str:
             if "&&" in hcl_str:
-                hcl_str = re.sub(r'&&[^\n]+\n', '', hcl_str)
+                hcl_str = re.sub(r"&&[^\n]+\n", "", hcl_str)
             else:
                 index = int(err_str.split(" ")[5].replace(":", ""))
-                hcl_str = hcl_str[0:index] + hcl_str[index+1:]
+                hcl_str = hcl_str[0:index] + hcl_str[index + 1 :]
             return load_hcl_str(hcl_str, hcl_file_path)
         if "validation {" in hcl_str:
-            new_str = re.sub(r'validation \{[^}]+}', '', hcl_str)
+            new_str = re.sub(r"validation \{[^}]+}", "", hcl_str)
             return load_hcl_str(new_str, hcl_file_path)
         raise HclLoadError(
             f"{err}\n{hcl_file_path}\nNote: pyhcl 0.4.4 and below do not seem to support validation sections in variables."

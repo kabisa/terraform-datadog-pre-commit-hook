@@ -8,8 +8,14 @@ from os.path import expanduser, isfile, basename
 import inflection
 import yaml
 
-from tf_datadog_docs.hcl2mdt import load_hcl_file, HclLoadError, generate_table_for_tf_obj, get_module_docs, extract_module_query, \
-    get_module_property
+from tf_datadog_docs.hcl2mdt import (
+    load_hcl_file,
+    HclLoadError,
+    generate_table_for_tf_obj,
+    get_module_docs,
+    extract_module_query,
+    get_module_property,
+)
 
 INDEX_HEADER = """
 | Check | Terraform File | Default Enabled |
@@ -115,9 +121,7 @@ def loop_variable_files(module_dir: str):
                 continue
             else:
                 raise
-        words = list(
-            map(capitalize, os.path.basename(terraform_file)[:-3].split("-"))
-        )
+        words = list(map(capitalize, os.path.basename(terraform_file)[:-3].split("-")))
         check_name = " ".join(words[:-1])
         yield check_name, terraform_file, obj
 
@@ -130,7 +134,8 @@ def generate_docs_for_module_dir(module_dir):
         module_name = inflection.titleize(os.path.basename(module_dir))
         module_name = module_name.replace("Terraform ", "Terraform module for ")
         fl.write(
-            textwrap.dedent(f"""
+            textwrap.dedent(
+                f"""
             ![Datadog](https://imgix.datadoghq.com/img/about/presskit/logo-v/dd_vertical_purple.png)
             
             [//]: # (This file is generated. Do not edit)
@@ -151,7 +156,11 @@ def generate_docs_for_module_dir(module_dir):
                 module_docs = get_module_docs(obj)
                 if module_docs:
                     buff.write(module_docs + "\n\n")
-                module_query = get_module_query_docs(terraform_file=terraform_file, vars_obj=obj, check_name_underscored=canonicalize_module_name(check_name))
+                module_query = get_module_query_docs(
+                    terraform_file=terraform_file,
+                    vars_obj=obj,
+                    check_name_underscored=canonicalize_module_name(check_name),
+                )
                 if module_query:
                     buff.write(module_query + "\n\n")
                 toc.append(f"  * [{check_name}](#{canonicalize_link(check_name)})")
@@ -185,8 +194,14 @@ def get_module_query(terraform_file):
 
 
 def expand_module_query(obj, check_name_underscored, query):
-    query = query.replace(f"${{var.{check_name_underscored}_evaluation_period}}", get_module_property(obj, "evaluation_period"))
-    query = query.replace(f"${{var.{check_name_underscored}_critical}}", str(get_module_property(obj, "critical")))
+    query = query.replace(
+        f"${{var.{check_name_underscored}_evaluation_period}}",
+        get_module_property(obj, "evaluation_period"),
+    )
+    query = query.replace(
+        f"${{var.{check_name_underscored}_critical}}",
+        str(get_module_property(obj, "critical")),
+    )
     query = query.replace(f"${{local.{check_name_underscored}_filter}}", "tag:xxx")
     return query
 
@@ -195,7 +210,8 @@ def get_module_query_docs(terraform_file, vars_obj, check_name_underscored):
     query = get_module_query(terraform_file)
     if query:
         query = expand_module_query(vars_obj, check_name_underscored, query)
-        query = textwrap.dedent(f"""
+        query = textwrap.dedent(
+            f"""
             Query:
             ```terraform
             {query}
@@ -233,7 +249,9 @@ def add_to_local_index(module_dir=None):
                 "critical": get_module_property(obj, "critical"),
             }
             if module_info["query"]:
-                module_info["query"] = expand_module_query(obj, check_name_underscored, module_info["query"])
+                module_info["query"] = expand_module_query(
+                    obj, check_name_underscored, module_info["query"]
+                )
 
     with open(index_loc, "w") as fl:
         yaml.safe_dump(index, fl)

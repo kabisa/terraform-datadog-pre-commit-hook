@@ -2,36 +2,33 @@
 import re
 import sys
 from os.path import isfile
+from typing import Dict
 
-import hcl
+import hcl2
 
 
 class HclLoadError(Exception):
     pass
 
 
-def load_hcl_str(hcl_str: str, hcl_file_path: str):
+def hcl2_list_to_dict_obj(obj: Dict) -> Dict:
+    """Compatibility layer to keep support for pyhcl if we need it but try to move on to python-hcl2"""
+    output = {}
+    for _type, vals in obj.items():
+        assert isinstance(vals, list), "isinstance(vals, list)"
+        output[_type] = val_dict = {}
+        for item in vals:
+            for key, val in item.items():
+                assert key not in val_dict, "assert key not in val_dict"
+                val_dict[key] = item[key]
+    return output
+
+
+def load_hcl_str(hcl_str: str, hcl_file_path: str) -> Dict:
     try:
-        obj = hcl.loads(hcl_str)
-    except ValueError as err:
-        err_str = str(err)
-        if "Illegal character" in err_str:
-            if "&&" in hcl_str:
-                hcl_str = re.sub(r"&&[^\n]+\n", "", hcl_str)
-            else:
-                index = int(err_str.split(" ")[5].replace(":", ""))
-                hcl_str = hcl_str[0:index] + hcl_str[index + 1 :]
-            return load_hcl_str(hcl_str, hcl_file_path)
-        if "validation {" in hcl_str:
-            new_str = re.sub(r"validation \{[^}]+}", "", hcl_str)
-            return load_hcl_str(new_str, hcl_file_path)
-        raise HclLoadError(
-            f"{err}\n{hcl_file_path}\nNote: pyhcl 0.4.4 and below do not seem to support validation sections in variables."
-        )
+        obj = hcl2_list_to_dict_obj(hcl2.loads(hcl_str))
     except Exception as err:
-        raise HclLoadError(
-            f"{err}\nError Loading File: {hcl_file_path}, May need to update pyhcl."
-        )
+        raise HclLoadError(f"{err}\nError Loading File: {hcl_file_path}")
     if str(obj) == "{}":
         raise HclLoadError(f"Empty Variables File: {hcl_file_path}")
     return obj

@@ -23,7 +23,7 @@ INDEX_HEADER = """
 """
 
 PRE_COMMIT_DOCS = """
-# Getting started
+# Getting started developing
 [pre-commit](http://pre-commit.com/) was used to do Terraform linting and validating.
 
 Steps:
@@ -128,24 +128,32 @@ def loop_variable_files(module_dir: str):
 
 def generate_docs_for_module_dir(module_dir):
     module_readme = os.path.join(module_dir, "README.md")
+    module_description_md = os.path.join(module_dir, "module_description.md")
+    module_description = ""
     toc = []
+    if isfile(module_description_md):
+        with open(module_description_md, "r") as fl:
+            module_description = fl.read()
+        if not module_description.startswith("\n"):
+            module_description = "\n" + module_description
+        if not module_description.endswith("\n"):
+            module_description = module_description + "\n"
+
     with open(module_readme, "w") as fl:
         read_intro(fl, module_dir, toc)
         module_name = inflection.titleize(os.path.basename(module_dir))
         module_name = module_name.replace("Terraform ", "Terraform module for ")
         fl.write(
-            textwrap.dedent(
-                f"""
-            ![Datadog](https://imgix.datadoghq.com/img/about/presskit/logo-v/dd_vertical_purple.png)
-            
-            [//]: # (This file is generated. Do not edit)
+            f"""
+![Datadog](https://imgix.datadoghq.com/img/about/presskit/logo-v/dd_vertical_purple.png)
 
-            # {module_name}
+[//]: # (This file is generated. Do not edit, module description can be added by editing / creating module_description.md)
 
-            Monitors:
-            * [{module_name}](#{canonicalize_link(module_name)})
-            """
-            )
+# {module_name}
+{module_description}
+Monitors:
+* [{module_name}](#{canonicalize_link(module_name)})
+"""
         )
 
         module_variables = None

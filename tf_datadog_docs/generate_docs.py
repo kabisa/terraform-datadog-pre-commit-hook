@@ -3,7 +3,7 @@ import io
 import os
 import sys
 import textwrap
-from os.path import expanduser, isfile, basename
+from os.path import expanduser, isfile, basename, isdir, join
 
 import inflection
 import yaml
@@ -38,17 +38,17 @@ INDEX_CHECK_PATTERN = "| [{check_name}](README.md#{check_name}) | [{file_name}](
 
 def get_dirs_in_path(pth):
     return [
-        os.path.join(pth, o)
+        join(pth, o)
         for o in os.listdir(pth)
-        if os.path.isdir(os.path.join(pth, o))
+        if os.path.isdir(join(pth, o))
     ]
 
 
 def get_tf_files_in_path(pth):
     return [
-        os.path.join(pth, o)
+        join(pth, o)
         for o in os.listdir(pth)
-        if os.path.isfile(os.path.join(pth, o)) and o.endswith(".tf")
+        if os.path.isfile(join(pth, o)) and o.endswith(".tf")
     ]
 
 
@@ -91,7 +91,7 @@ def get_toc_line(line):
 
 
 def read_intro(fl, module_dir, toc):
-    intro_fl_path = os.path.join(module_dir, "intro.md")
+    intro_fl_path = join(module_dir, "intro.md")
     if os.path.isfile(intro_fl_path):
         with open(intro_fl_path, "r") as intro_fl:
             for line in intro_fl.readlines():
@@ -126,9 +126,25 @@ def loop_variable_files(module_dir: str):
         yield check_name, terraform_file, obj
 
 
+def get_examples(module_dir: str) -> str:
+    examples_dir = join(module_dir, "examples")
+    if not isdir(examples_dir):
+        return ""
+
+    example_files = get_tf_files_in_path(examples_dir)
+    if not example_files:
+        return ""
+
+    examples = "\n# Example Usage"
+    for example_file in example_files:
+        with open(example_file, "r") as fl:
+            examples += "\n\n```terraform\n" + fl.read() + "\n```\n"
+    return examples
+
+
 def generate_docs_for_module_dir(module_dir):
-    module_readme = os.path.join(module_dir, "README.md")
-    module_description_md = os.path.join(module_dir, "module_description.md")
+    module_readme = join(module_dir, "README.md")
+    module_description_md = join(module_dir, "module_description.md")
     module_description = ""
     toc = []
     if isfile(module_description_md):
@@ -138,6 +154,8 @@ def generate_docs_for_module_dir(module_dir):
             module_description = "\n" + module_description
         if not module_description.endswith("\n"):
             module_description = module_description + "\n"
+
+    module_examples = get_examples(module_dir)
 
     with open(module_readme, "w") as fl:
         read_intro(fl, module_dir, toc)
@@ -159,7 +177,7 @@ We have two base modules we use to standardise development of our Monitor Module
 - [service check monitor](https://github.com/kabisa/terraform-datadog-service-check-monitor)
 
 Modules are generated with this tool: https://github.com/kabisa/datadog-terraform-generator
-
+{module_examples}
 Monitors:
 * [{module_name}](#{canonicalize_link(module_name)})
 """

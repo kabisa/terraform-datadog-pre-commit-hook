@@ -151,6 +151,15 @@ def generate_docs_for_module_dir(module_dir):
 
 # {module_name}
 {module_description}
+This module is part of a larger suite of modules that provide alerts in Datadog.
+Other modules can be found on the [Terraform Registry](https://registry.terraform.io/search/modules?namespace=kabisa&provider=datadog)
+
+We have two base modules we use to standardise development of our Monitor Modules:
+- [generic monitor](https://github.com/kabisa/terraform-datadog-generic-monitor) Used in 90% of our alerts
+- [service check monitor](https://github.com/kabisa/terraform-datadog-service-check-monitor)
+
+Modules are generated with this tool: https://github.com/kabisa/datadog-terraform-generator
+
 Monitors:
 * [{module_name}](#{canonicalize_link(module_name)})
 """

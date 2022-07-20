@@ -138,7 +138,13 @@ def get_examples(module_dir: str) -> str:
     examples = "\n# Example Usage"
     for example_file in example_files:
         with open(example_file, "r") as fl:
-            examples += "\n\n```terraform\n" + fl.read() + "\n```\n"
+            examples += "\n\n```terraform\n"
+            for line in fl.readlines():
+                if line.startswith("# tflint-ignore:"):
+                    continue
+                examples += line
+            examples += "\n```\n"
+
     return examples
 
 

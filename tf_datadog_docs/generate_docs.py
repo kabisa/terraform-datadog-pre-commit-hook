@@ -336,7 +336,7 @@ def add_to_local_index(module_dir=None):
                 "name": check_name,
                 "query": get_module_query(terraform_file),
                 "evaluation_period": get_module_property(obj, "evaluation_period"),
-                "default_enabled": get_module_property(obj, "enabled"),
+                "default_enabled": get_module_enabled(obj, "enabled"),
                 "priority": get_module_property(obj, "priority"),
                 "critical": get_module_property(obj, "critical"),
             }

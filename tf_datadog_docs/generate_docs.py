@@ -13,6 +13,8 @@ from tf_datadog_docs.hcl2mdt import (
     HclLoadError,
     generate_table_for_tf_obj,
     get_module_docs,
+    get_module_priority,
+    get_module_enabled,
     extract_module_query,
     get_module_property,
 )
@@ -184,45 +186,89 @@ We have two base modules we use to standardise development of our Monitor Module
 
 Modules are generated with this tool: https://github.com/kabisa/datadog-terraform-generator
 {module_examples}
+
+[Module Variables](#module-variables)
+
 Monitors:
-* [{module_name}](#{canonicalize_link(module_name)})
+
 """
         )
 
         module_variables = None
-        buff = io.StringIO()
-        for check_name, terraform_file, obj in loop_variable_files(module_dir):
-            if check_name:
-                buff.write(f"## {check_name}\n\n")
+        module_buff = io.StringIO()
+        overview = {}
+        for monitor_name, terraform_file, obj in loop_variable_files(module_dir):
+            if monitor_name:
+                module_buff.write(f"## {monitor_name}\n\n")
                 module_docs = get_module_docs(obj)
                 if module_docs:
-                    buff.write(module_docs + "\n\n")
-                module_query = get_module_query_docs(
+                    module_buff.write(module_docs + "\n\n")
+                default_enabled = get_module_enabled(obj)
+                module_priority = get_module_priority(obj)
+                module_query = get_expanded_module_query(
                     terraform_file=terraform_file,
                     vars_obj=obj,
-                    check_name_underscored=canonicalize_module_name(check_name),
+                    check_name_underscored=canonicalize_module_name(monitor_name),
                 )
+
+                markdown_link = f"[{monitor_name}](#{canonicalize_link(monitor_name)})"
+
                 if module_query:
-                    buff.write(module_query + "\n\n")
-                toc.append(f"  * [{check_name}](#{canonicalize_link(check_name)})")
-                generate_table_for_tf_obj(obj, default_value="", output_buff=buff)
-                buff.write("\n\n")
+                    module_buff.write(wrap_query_docs(module_query) + "\n\n")
+                    overview[markdown_link] = [str(default_enabled), str(module_priority), module_query]
+
+                generate_table_for_tf_obj(obj, default_value="", output_buff=module_buff)
+                module_buff.write("\n\n")
             else:
                 module_variables = obj
 
         if module_variables:
-            buff.write(f"## Module Variables\n\n")
-            toc.append(f"  * [Module Variables](#module-variables)")
+            module_buff.write(f"## Module Variables\n\n")
             generate_table_for_tf_obj(
-                module_variables, default_value="", output_buff=buff
+                module_variables, default_value="", output_buff=module_buff
             )
-            buff.write("\n\n")
+            module_buff.write("\n\n")
 
-        fl.write("\n".join(toc) + "\n")
+        write_overview_table(overview, fl)
 
         fl.write(PRE_COMMIT_DOCS)
-        buff.seek(0)
-        fl.write(buff.read())
+
+        module_buff.seek(0)
+        fl.write(module_buff.read())
+
+
+def write_overview_table(overview, fl):
+    # Default Column Widths
+    monitor_name = 15
+    default_enabled = 4
+    module_priority = 2
+    module_query = 22
+
+    print(
+        "| {} | {} | {} | {} |".format(
+            "Monitor name".ljust(monitor_name),
+            "Default enabled".ljust(default_enabled),
+            "Priority".ljust(module_priority),
+            "Query".ljust(module_query),
+        ),
+        file=fl,
+    )
+    print(
+        "|-{}-|-{}-|-{}-|-{}-|".format("-" * monitor_name, "-" * default_enabled, "-" * module_priority, "-" * module_query),
+        file=fl,
+    )
+
+    for key in sorted(overview):
+        item = overview[key]
+        print(
+            "| {} | {} | {} | {} |".format(
+                str(key).strip(" ").ljust(monitor_name),
+                str(item[0]).strip(" ").ljust(default_enabled),
+                str(item[1]).strip(" ").ljust(module_priority),
+                str(item[2]).strip(" ").ljust(module_query),
+            ),
+            file=fl,
+        )
 
 
 def get_module_query(terraform_file):
@@ -247,10 +293,15 @@ def expand_module_query(obj, check_name_underscored, query):
     return query
 
 
-def get_module_query_docs(terraform_file, vars_obj, check_name_underscored):
+def get_expanded_module_query(terraform_file, vars_obj, check_name_underscored):
     query = get_module_query(terraform_file)
     if query:
         query = expand_module_query(vars_obj, check_name_underscored, query)
+    return query
+
+
+def wrap_query_docs(query):
+    if query:
         query = textwrap.dedent(
             f"""
             Query:

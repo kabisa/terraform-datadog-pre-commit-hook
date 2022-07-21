@@ -49,6 +49,18 @@ def get_module_docs(obj) -> str:
     return get_module_property(obj, "docs")
 
 
+def get_module_priority(obj) -> str:
+    return get_module_property(obj, "priority")
+
+
+def get_module_enabled(obj) -> str:
+    prop_value = ""
+    for key in obj["variable"].keys():
+        if key.endswith(f"_enabled") and not key.endswith("_alerting_enabled"):
+            prop_value = obj["variable"][key].get("default", "") or prop_value
+    return bool(prop_value)
+
+
 def get_module_property(obj, property_name) -> str:
     prop_value = ""
     for key in obj["variable"].keys():

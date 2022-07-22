@@ -3,10 +3,9 @@ import io
 import os
 import sys
 import textwrap
-from os.path import expanduser, isfile, basename, isdir, join
+from os.path import isfile, isdir, join
 
 import inflection
-import yaml
 
 from tf_datadog_docs.hcl2mdt import (
     load_hcl_file,
@@ -55,7 +54,7 @@ def get_tf_files_in_path(pth):
 
 
 def get_tf_variables_files_in_path(pth):
-    return [o for o in get_tf_files_in_path(pth) if o.endswith("variables.tf")]
+    return list(sorted(o for o in get_tf_files_in_path(pth) if o.endswith("variables.tf")))
 
 
 CAPITALIZE_KEYWORDS = {"dd": "Datadog", "cpu": "CPU"}
@@ -311,42 +310,6 @@ def wrap_query_docs(query):
             """
         ).strip()
     return query
-
-
-def add_to_local_index(module_dir=None):
-    if module_dir is None:
-        path_var = sys.argv[1] if len(sys.argv) > 1 else "."
-        module_dir = os.path.abspath(path_var)
-
-    index_loc = expanduser("~/.datadog-terraform-monitor-index.yaml")
-    if isfile(index_loc):
-        with open(index_loc, "r") as fl:
-            index = yaml.safe_load(fl)
-    else:
-        index = {}
-
-    module_name = basename(module_dir)
-    if module_name not in index:
-        index[module_name] = {}
-    for check_name, terraform_file, obj in loop_variable_files(module_dir):
-        if check_name:
-            check_name_underscored = canonicalize_module_name(check_name)
-            index[module_name][check_name] = module_info = {
-                "docs": get_module_docs(obj),
-                "name": check_name,
-                "query": get_module_query(terraform_file),
-                "evaluation_period": get_module_property(obj, "evaluation_period"),
-                "default_enabled": get_module_enabled(obj, "enabled"),
-                "priority": get_module_property(obj, "priority"),
-                "critical": get_module_property(obj, "critical"),
-            }
-            if module_info["query"]:
-                module_info["query"] = expand_module_query(
-                    obj, check_name_underscored, module_info["query"]
-                )
-
-    with open(index_loc, "w") as fl:
-        yaml.safe_dump(index, fl)
 
 
 if __name__ == "__main__":

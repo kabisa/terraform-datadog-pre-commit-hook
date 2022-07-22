@@ -1,5 +1,4 @@
 # Original Source: https://github.com/hassenius/hcl2mdtable
-import re
 import sys
 from os.path import isfile
 from typing import Dict

@@ -38,11 +38,7 @@ INDEX_CHECK_PATTERN = "| [{check_name}](README.md#{check_name}) | [{file_name}](
 
 
 def get_dirs_in_path(pth):
-    return [
-        join(pth, o)
-        for o in os.listdir(pth)
-        if os.path.isdir(join(pth, o))
-    ]
+    return [join(pth, o) for o in os.listdir(pth) if os.path.isdir(join(pth, o))]
 
 
 def get_tf_files_in_path(pth):
@@ -54,7 +50,9 @@ def get_tf_files_in_path(pth):
 
 
 def get_tf_variables_files_in_path(pth):
-    return list(sorted(o for o in get_tf_files_in_path(pth) if o.endswith("variables.tf")))
+    return list(
+        sorted(o for o in get_tf_files_in_path(pth) if o.endswith("variables.tf"))
+    )
 
 
 CAPITALIZE_KEYWORDS = {"dd": "Datadog", "cpu": "CPU"}
@@ -214,9 +212,15 @@ Monitors:
 
                 if module_query:
                     module_buff.write(wrap_query_docs(module_query) + "\n\n")
-                    overview[markdown_link] = [str(default_enabled), str(module_priority), module_query]
+                    overview[markdown_link] = [
+                        str(default_enabled),
+                        str(module_priority),
+                        wrap_query_docs_for_table(module_query),
+                    ]
 
-                generate_table_for_tf_obj(obj, default_value="", output_buff=module_buff)
+                generate_table_for_tf_obj(
+                    obj, default_value="", output_buff=module_buff
+                )
                 module_buff.write("\n\n")
             else:
                 module_variables = obj
@@ -248,12 +252,17 @@ def write_overview_table(overview, fl):
             "Monitor name".ljust(monitor_name),
             "Default enabled".ljust(default_enabled),
             "Priority".ljust(module_priority),
-            "Query".ljust(wrap_query_docs_for_table(module_query)),
+            "Query".ljust(module_query),
         ),
         file=fl,
     )
     print(
-        "|-{}-|-{}-|-{}-|-{}-|".format("-" * monitor_name, "-" * default_enabled, "-" * module_priority, "-" * module_query),
+        "|-{}-|-{}-|-{}-|-{}-|".format(
+            "-" * monitor_name,
+            "-" * default_enabled,
+            "-" * module_priority,
+            "-" * module_query,
+        ),
         file=fl,
     )
 

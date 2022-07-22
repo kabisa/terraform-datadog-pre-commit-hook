@@ -248,7 +248,7 @@ def write_overview_table(overview, fl):
             "Monitor name".ljust(monitor_name),
             "Default enabled".ljust(default_enabled),
             "Priority".ljust(module_priority),
-            "Query".ljust(module_query),
+            "Query".ljust(wrap_query_docs_for_table(module_query)),
         ),
         file=fl,
     )
@@ -304,6 +304,18 @@ def wrap_query_docs(query):
         query = textwrap.dedent(
             f"""
             Query:
+            ```terraform
+            {query}
+            ```
+            """
+        ).strip()
+    return query
+
+
+def wrap_query_docs_for_table(query):
+    if query:
+        query = textwrap.dedent(
+            f"""
             ```terraform
             {query}
             ```

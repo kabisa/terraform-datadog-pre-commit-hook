@@ -323,13 +323,7 @@ def wrap_query_docs(query):
 
 def wrap_query_docs_for_table(query):
     if query:
-        query = textwrap.dedent(
-            f"""
-            ```terraform
-            {query}
-            ```
-            """
-        ).strip()
+        query = f"`{query}`"
     return query
 
 
